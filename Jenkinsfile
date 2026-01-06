@@ -22,7 +22,7 @@ pipeline {
           call .venv\\Scripts\\activate
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pytest --cov=app --cov-report=xml
+          python -m pytest --cov=app --cov-report=xml:coverage.xml
         """
       }
       post {
