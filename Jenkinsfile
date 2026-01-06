@@ -55,10 +55,10 @@ pipeline {
 
     stage('Trivy Scan') {
       steps {
-        bat """
-          docker run --rm aquasec/trivy:latest image --exit-code 0 --severity LOW,MEDIUM %IMAGE_NAME%:%IMAGE_TAG%
-          docker run --rm aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL %IMAGE_NAME%:%IMAGE_TAG%
-        """
+         bat """
+              trivy image --severity LOW,MEDIUM --exit-code 0 %IMAGE_NAME%:%IMAGE_TAG%
+              trivy image --severity HIGH,CRITICAL --exit-code 1 %IMAGE_NAME%:%IMAGE_TAG%
+            """
       }
     }
 
