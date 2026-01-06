@@ -5,6 +5,7 @@ pipeline {
     DOCKERHUB_USER = "fgonzalez8602"
     IMAGE_NAME     = "${env.DOCKERHUB_USER}/hello-ci-cd-devops"
     IMAGE_TAG      = "${env.BUILD_NUMBER}"
+    TRIVY_IMAGE    = "aquasec/trivy:latest"
   }
 
   stages {
@@ -55,10 +56,28 @@ pipeline {
 
     stage('Trivy Scan') {
       steps {
-         bat """
-              trivy image --severity LOW,MEDIUM --exit-code 0 %IMAGE_NAME%:%IMAGE_TAG%
-              trivy image --severity HIGH,CRITICAL --exit-code 1 %IMAGE_NAME%:%IMAGE_TAG%
-            """
+        bat """
+          echo Saving image to TAR for Trivy scan...
+          docker save %IMAGE_NAME%:%IMAGE_TAG% -o image.tar
+
+          echo Trivy scan (LOW,MEDIUM) - do not fail build...
+          docker run --rm ^
+            -v "%CD%:/work" ^
+            %TRIVY_IMAGE% ^
+            image --input /work/image.tar --severity LOW,MEDIUM --exit-code 0
+
+          echo Trivy scan (HIGH,CRITICAL) - fail build if found...
+          docker run --rm ^
+            -v "%CD%:/work" ^
+            %TRIVY_IMAGE% ^
+            image --input /work/image.tar --severity HIGH,CRITICAL --exit-code 1
+        """
+      }
+      post {
+        always {
+          // Limpieza del tar para no ensuciar el workspace (igual cleanWs lo borra)
+          bat "if exist image.tar del /f /q image.tar"
+        }
       }
     }
 
